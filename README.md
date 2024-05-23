@@ -3,10 +3,10 @@
 Este projeto é uma aplicação voltada para a gestão da frota de transporte de mercadorias através de quatro planetas na galáxia. A aplicação oferece funcionalidades completas para gerenciar pilotos, naves, recursos e contratos de transporte.
 
 Integrantes do Grupo:
-Iago da Silva Rios (mat. 2020105750)
-Leonardo Pessoa Miranda (mat. 2021039999)
-Lucas Soares Maia (mat. 2021040091)
-Ronald Rabelo dos Santos Filho (mat. 2020093795)
+- Iago da Silva Rios (mat. 2020105750)
+- Leonardo Pessoa Miranda (mat. 2021039999)
+- Lucas Soares Maia (mat. 2021040091)
+- Ronald Rabelo dos Santos Filho (mat. 2020093795)
 
 ## Funcionalidades
 
