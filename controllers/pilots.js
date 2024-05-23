@@ -2,6 +2,42 @@ const db = require("./db");
 const { getContracts } = require("../controllers/contracts.js");
 const { router: contractsRouter } = require("../routes/contracts.js");
 
+// Helper functions
+const getPilotInfo = async (id) => {
+  const query = `
+    SELECT location, fuel_level
+    FROM pilot INNER JOIN ship
+    ON pilot.certification = ship.pilot_id
+    WHERE certification = ?`;
+  const [result] = await db.query(query, [id]);
+  return result;
+};
+
+const getTravelConstrains = async (location) => {
+  const query = `
+    SELECT travel_constrains 
+    FROM planet 
+    WHERE id = ?`;
+  const [result] = await db.query(query, [location]);
+  return result;
+};
+
+const updatePilotLocation = async (id, newLocation) => {
+  const query = `
+    UPDATE pilot
+    SET location = ?
+    WHERE certification = ?`;
+  await db.query(query, [newLocation, id]);
+};
+
+const updateShipFuelLevel = async (id, newFuel) => {
+  const query = `
+    UPDATE ship 
+    SET fuel_level = ?
+    WHERE pilot_id = ?`;
+  await db.query(query, [newFuel, id]);
+};
+
 const getPilots = async (_, res, next) => {
   try {
     res.json(await db.query(`SELECT * FROM pilot`));
@@ -43,6 +79,50 @@ const deletePilot = async (req, res, next) => {
     res.json(await db.query(`DELETE FROM pilot WHERE id = '${id}'`));
   } catch (err) {
     console.error(` while deleting pilot with id ${id}`, err.message);
+    next(err);
+  }
+};
+
+const travelBetweenPlanets = async (req, res, next) => {
+  const { id, newLocation } = req.params;
+
+  if (!id || !newLocation) {
+    return res.status(400).json({ error: "Missing required parameters" });
+  }
+
+  try {
+    const pilotInfo = await getPilotInfo(id);
+    if (!pilotInfo) {
+      return res.status(404).json({ error: "Pilot not found" });
+    }
+
+    const { location, fuel_level: fuelLevel } = pilotInfo;
+
+    const constrains = await getTravelConstrains(location);
+    if (!constrains) {
+      return res.status(404).json({ error: "Current planet not found" });
+    }
+
+    const travelConstrain = constrains.travel_constrains[newLocation];
+    if (travelConstrain === undefined) {
+      return res.status(400).json({ error: "Invalid new location" });
+    }
+
+    const newFuel = fuelLevel - travelConstrain;
+    if (newFuel < 0) throw new Error("Not enough fuel");
+
+    if (newLocation !== location && travelConstrain !== -1) {
+      await Promise.all([
+        updatePilotLocation(id, newLocation),
+        updateShipFuelLevel(id, newFuel),
+        processTransaction(id),
+      ]);
+
+      res.json({ message: "Travel successful" });
+    } else {
+      throw new Error("Route blocked");
+    }
+  } catch (err) {
     next(err);
   }
 };
@@ -173,7 +253,6 @@ const travelBetweenPlanets = async (req, res, next) => {
       ON pilot.certification = ship.pilot_id
       WHERE certification = '${id}'`
     );
-
 
     const { location, fuel_level: fuelLevel } = pilotInfo;
 
