@@ -244,54 +244,6 @@ const acceptContract = async (req, res, next) => {
   }
 };
 
-const travelBetweenPlanets = async (req, res, next) => {
-  const { id, newLocation } = req.params;
-  try {
-    const [pilotInfo] = await db.query(
-      `SELECT location, fuel_level
-      FROM pilot INNER JOIN ship
-      ON pilot.certification = ship.pilot_id
-      WHERE certification = '${id}'`
-    );
-
-    const { location, fuel_level: fuelLevel } = pilotInfo;
-
-    const [constrains] = await db.query(
-      `SELECT travel_constrains FROM planet WHERE id = '${location}'`
-    );
-
-    const travelConstrain = constrains.travel_constrains[newLocation];
-
-    newFuel = fuelLevel - travelConstrain;
-
-    if (newFuel < 0) throw Error("Not enough fuel");
-
-    if (newLocation != location && travelConstrain != -1) {
-      Promise.all([
-        db.query(
-          `UPDATE pilot
-          SET location = '${newLocation}'
-          WHERE certification = '${id}'`
-        ),
-        db.query(
-          `UPDATE ship 
-            SET fuel_level = ${newFuel}
-            WHERE pilot_id = '${id}'`
-        ),
-        processTransaction(id),
-      ])
-        .then(function (result) {
-          res.json(result);
-        })
-        .catch((e) => console.error(e));
-    } else {
-      throw Error("Route blocked");
-    }
-  } catch (err) {
-    next(err);
-  }
-};
-
 module.exports = {
   createPilot,
   getPilots,
