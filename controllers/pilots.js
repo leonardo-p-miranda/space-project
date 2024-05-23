@@ -253,21 +253,24 @@ const processTransaction = async (userId, res) => {
   }
 };
 
+const updateContract = async (acceptedBy, contractId) => {
+  const query = `
+    UPDATE contract
+    SET accepted_by = ?
+    WHERE id = ?
+  `;
+  const result = await db.query(query, [acceptedBy, contractId]);
+  return result;
+};
+
 const acceptContract = async (req, res, next) => {
   const { id, contract: contractId } = req.params;
 
-  console.log(id, contractId);
-
   try {
-    res.json(
-      await db.query(
-        `UPDATE contract
-        SET accepted_by = '${id}'
-        WHERE id = '${contractId}'`
-      )
-    );
+    const result = await updateContract(id, contractId);
+    res.json(result);
   } catch (err) {
-    console.error(`Error while accepting contract ${id}`, err.message);
+    console.error(`Error while accepting contract ${id}: ${err.message}`);
     next(err);
   }
 };
