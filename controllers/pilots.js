@@ -180,49 +180,77 @@ const refillFuel = async (req, res, next) => {
     .catch((e) => next(e));
 };
 
-const processTransaction = async (userId) => {
+// Funções auxiliares
+async function getContracts() {
   const contracts = await db.query(`SELECT * FROM contract`);
+  return contracts;
+}
 
-  let foundContract = contracts.find(
-    (contract) => contract.accepted_by == userId
-  );
+function findAcceptedContract(contracts, userId) {
+  return contracts.find((contract) => contract.accepted_by == userId);
+}
 
+async function getPilotCapacity(userId) {
   const [{ weight_capacity: capacity }] = await db.query(
     `SELECT weight_capacity
-      FROM pilot INNER JOIN ship
-      ON pilot.certification = ship.pilot_id
-      WHERE certification = '${userId}'`
+     FROM pilot INNER JOIN ship
+     ON pilot.certification = ship.pilot_id
+     WHERE certification = '${userId}'`
   );
+  return capacity;
+}
 
+async function getContractWeight(contractId) {
   const [{ weight }] = await db.query(
     `SELECT weight
-      FROM contract INNER JOIN resource
-      ON contract.payload = resource.id
-      WHERE contract.id = '${foundContract.id}'`
+     FROM contract INNER JOIN resource
+     ON contract.payload = resource.id
+     WHERE contract.id = '${contractId}'`
   );
+  return weight;
+}
 
-  if (capacity < weight) {
-    console.error(`Weight not supported, wait for another trip`);
+async function updateContractStatus(contractId) {
+  await db.query(
+    `UPDATE contract
+     SET status = 1
+     WHERE id = '${contractId}'`
+  );
+}
 
-    return;
+async function updatePilotCredits(userId, value) {
+  await db.query(
+    `UPDATE pilot 
+     SET credits = credits + ${value}
+     WHERE certification = '${userId}'`
+  );
+}
+
+const processTransaction = async (userId, res) => {
+  try {
+    const contracts = await getContracts();
+    const foundContract = findAcceptedContract(contracts, userId);
+    const capacity = await getPilotCapacity(userId);
+    const weight = await getContractWeight(foundContract.id);
+
+    if (capacity < weight) {
+      console.error(`Weight not supported, wait for another trip`);
+      res
+        .status(400)
+        .json({ error: `Weight not supported, wait for another trip` });
+      return;
+    }
+
+    await Promise.all([
+      updateContractStatus(foundContract.id),
+      updatePilotCredits(userId, foundContract.value),
+    ]);
+
+    res.json({ message: "Transaction processed successfully" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal server error" });
   }
-
-  Promise.all([
-    db.query(
-      `UPDATE contract
-    SET status = 1
-    WHERE id = '${foundContract.id}'`
-    ),
-    db.query(
-      `UPDATE pilot 
-    SET credits = credits + ${foundContract.value}
-    WHERE certification = '${userId}'`
-    ),
-  ])
-    .then(function (result) {
-      res.json(result);
-    })
-    .catch((e) => console.error(e));
 };
 
 const acceptContract = async (req, res, next) => {
