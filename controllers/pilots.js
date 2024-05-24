@@ -1,5 +1,4 @@
 const db = require("./db");
-const { getContracts } = require("../controllers/contracts.js");
 const { router: contractsRouter } = require("../routes/contracts.js");
 
 // Helper functions
