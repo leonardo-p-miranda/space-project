@@ -1,5 +1,4 @@
 const db = require("./db");
-const { router: contractsRouter } = require("../routes/contracts.js");
 
 // Helper functions
 const getPilotInfo = async (id) => {
@@ -91,18 +90,18 @@ const travelBetweenPlanets = async (req, res, next) => {
 
   try {
     const pilotInfo = await getPilotInfo(id);
-    if (!pilotInfo) {
+    if (!pilotInfo || !pilotInfo.length) {
       return res.status(404).json({ error: "Pilot not found" });
     }
 
-    const { location, fuel_level: fuelLevel } = pilotInfo;
+    const { location, fuel_level: fuelLevel } = pilotInfo[0];
 
     const constrains = await getTravelConstrains(location);
-    if (!constrains) {
+    if (!constrains || !constrains.length) {
       return res.status(404).json({ error: "Current planet not found" });
     }
 
-    const travelConstrain = constrains.travel_constrains[newLocation];
+    const travelConstrain = constrains[0].travel_constrains[newLocation];
     if (travelConstrain === undefined) {
       return res.status(400).json({ error: "Invalid new location" });
     }
@@ -114,7 +113,7 @@ const travelBetweenPlanets = async (req, res, next) => {
       await Promise.all([
         updatePilotLocation(id, newLocation),
         updateShipFuelLevel(id, newFuel),
-        processTransaction(id),
+        processTransaction(id, res), // Passando 'res' para o processamento de transação
       ]);
 
       res.json({ message: "Travel successful" });
@@ -125,6 +124,7 @@ const travelBetweenPlanets = async (req, res, next) => {
     next(err);
   }
 };
+
 
 const updatePilot = async (req, res, next) => {
   const { id } = req.params;
@@ -234,10 +234,9 @@ const processTransaction = async (userId, res) => {
 
     if (capacity < weight) {
       console.error(`Weight not supported, wait for another trip`);
-      res
+      return res
         .status(400)
         .json({ error: `Weight not supported, wait for another trip` });
-      return;
     }
 
     await Promise.all([
@@ -251,6 +250,7 @@ const processTransaction = async (userId, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
 
 const updateContract = async (acceptedBy, contractId) => {
   const query = `
@@ -283,4 +283,6 @@ module.exports = {
   travelBetweenPlanets,
   refillFuel,
   acceptContract,
+  processTransaction,
+  getPilotInfo
 };

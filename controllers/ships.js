@@ -18,7 +18,7 @@ const createShip = async (req, res, next) => {
 
     res.json(
       await db.query(
-        `INSERT INTO ship VALUES ('${id}', '${fuel_capacity}',  ${fuel_level}, ${weight_capacity}, ${pilot_id})`
+        `INSERT INTO ship (id, fuel_capacity, fuel_level, weight_capacity, pilot_id) VALUES ('${id}', '${fuel_capacity}',  ${fuel_level}, ${weight_capacity}, ${pilot_id})`
       )
     );
   } catch (err) {
