@@ -1,3 +1,6 @@
+
+const sqlite3 = require('sqlite3').verbose();
+
 const request = require('supertest');
 const express = require('express');
 const {
@@ -20,10 +23,25 @@ app.get('/contract/:id', getContract);
 app.delete('/contract/:id', deleteContract);
 app.put('/contract/:id', updateContract);
 
+
+
+
 describe('Contracts Controller Tests', () => {
+
+  beforeEach((done) => {
+    const db = new sqlite3.Database(':memory:');
+    db.serialize(() => {
+      db.run(`CREATE TABLE pilot (id INTEGER PRIMARY KEY, name TEXT, age INTEGER, experience INTEGER, origin TEXT)`);
+      db.run(`CREATE TABLE contract (id TEXT PRIMARY KEY, description TEXT, origin_planet TEXT, destination_planet TEXT, value INTEGER, payload TEXT, status TEXT)`);
+      done();
+    });
+  });
+  
   afterEach(() => {
     jest.clearAllMocks();
   });
+
+  
 
   test('getContract should return a specific contract', async () => {
     const mockContractId = '123';
