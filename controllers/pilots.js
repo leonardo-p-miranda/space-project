@@ -66,7 +66,7 @@ const createPilot = async (req, res, next) => {
       )
     );
   } catch (err) {
-    console.error(`Error while creating pilot`, err.message);
+    console.error(`Error while creating pilot, err.message`);
     next(err);
   }
 };
@@ -74,7 +74,7 @@ const createPilot = async (req, res, next) => {
 const deletePilot = async (req, res, next) => {
   try {
     const { id } = req.params;
-    res.json(await db.query(`DELETE FROM pilot WHERE id = '${id}'`));
+    res.json(await db.query(`DELETE FROM pilot WHERE certification = '${id}'`));
   } catch (err) {
     console.error(` while deleting pilot with id ${id}`, err.message);
     next(err);
@@ -152,7 +152,7 @@ const refillFuel = async (req, res, next) => {
   const { id } = req.params;
 
   const [{ credits }] = await db.query(
-    `SELECT credits FROM pilot WHERE certification = ${id}`
+  `  SELECT credits FROM pilot WHERE certification = ${id}`
   );
 
   console.log(credits);

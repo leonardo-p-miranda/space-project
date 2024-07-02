@@ -62,7 +62,7 @@ describe("Controller tests", () => {
     db.query.mockResolvedValue({ affectedRows: 1 });
     const response = await request(app).delete("/pilot/123");
     expect(response.status).toBe(200);
-    expect(db.query).toHaveBeenCalledWith(`DELETE FROM pilot WHERE id = '123'`);
+    expect(db.query).toHaveBeenCalledWith(`DELETE FROM pilot WHERE certification = '123'`);
   });
 
   test("updatePilot should update a pilot's information", async () => {

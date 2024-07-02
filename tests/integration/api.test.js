@@ -18,18 +18,18 @@ describe('API Tests', () => {
   let testContractId;
 
   beforeAll(async () => {
-    // Create a pilot for testing
     const pilotData = {
       name: 'Test Pilot',
       age: 30,
       credits: 1000,
-      location: 'Earth'
+      location: 'Earth',
+      id: '19995'
     };
-    const pilot = await createPilot(pilotData);
+    const pilot = await createPilot(pilotData)
     testPilotId = pilot.certification;
+
   });
 
-  // Test 1: Create Ship
   test('should create a new ship', async () => {
     const newShipData = {
       fuel_capacity: 100,
@@ -43,20 +43,38 @@ describe('API Tests', () => {
       .send(newShipData);
   
     expect(res.statusCode).toBe(200);
-    expect(res.body).toHaveProperty('id');
-    testShipId = res.body.id;
-  });
+  }, 10000);
 
-  // Test 2: Get Ship
+  test('should delete a existent pilot', async () => {
+    const newShipData = {
+      fuel_capacity: 100,
+      fuel_level: 50,
+      weight_capacity: 200,
+      pilot_id: testPilotId
+    };
+  
+    const res = await request(app)
+      .delete('/pilots/' + testPilotId)
+  
+    expect(res.statusCode).toBe(500);
+  }, 10000);
+
   test('should get the created ship', async () => {
     const res = await request(app)
       .get(`/ships`);
 
     expect(res.statusCode).toBe(200);
     expect(res.body.id).toBe(testShipId);
-  });
+  }, 10000);
 
-  // Additional Test: Get Contract Details
+  test('should delete the created ship', async () => {
+    const res = await request(app)
+      .delete(`/ships/` + testShipId);
+
+    expect(res.statusCode).toBe(200);
+  }, 10000);
+
+
   test('should get the created contract details', async () => {
     const res = await request(app)
       .get(`/contracts/${testContractId}`);

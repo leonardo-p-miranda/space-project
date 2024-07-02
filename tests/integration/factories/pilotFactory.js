@@ -2,8 +2,8 @@ const { v4: uuidv4 } = require('uuid');
 const db = require('../../../controllers/db');
 
 const createPilot = async (data) => {
-  const { name, age, credits, location } = data;
-  const certification = uuidv4();
+  const { id, name, age, credits, location } = data;
+  const certification = id
 
   const query = `INSERT INTO pilot VALUES ('${certification}', '${name}', ${age}, ${credits}, '${location}')`;
 
